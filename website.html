@@ -21,8 +21,24 @@
             imports = {
                 "mem": kernMemory,
                 "addTask": function(i)
+                    i = Math.floor(i);
                     s = loadStr(i, tasks[current].imports.mem);
-                    
+                    let pid = 0;
+                    while (tasks[pid] !=== null) pid++;
+                    XMLHttpRequest req = new XHTTPRequest();
+                    req.onreadystatechange = function() {
+                        if (req.state == 4) {
+                            if (req.status == 200) {
+                                //TODO
+                            } else { 
+                                //TODO
+                            }
+                        }
+                    }
+                    req.open("GET", s, true);
+                    req.send();
+                    return pid;
+                }
             }
         }
     ];
