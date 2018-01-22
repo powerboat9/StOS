@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script>
+
+(function() {
+    let loadStr = function(mem, i) {
+        let s = "";
+        let a = new Uint32Array(mem.buffer);
+        while (true) {
+            if (a[i] == 0) break;
+            s += String.fromCharCode(a[i++]);
+        }
+        return s;
+    }
+
+    let kernMemory = WebAssembly.Memory({initial: 1, maximum: 1});
+    let current = 0;
+    let tasks = [
+        {
+            imports = {
+                "mem": kernMemory,
+                "addTask": function(i)
+                    s = loadStr(i, tasks[current].imports.mem);
+                    
+            }
+        }
+    ];
+    let startTask = function(isAdmin, name, size) {
+        
+
+</script>
+</head>
+<body>
+
+<canvas id="disp">
+
+</body>
+</html>
