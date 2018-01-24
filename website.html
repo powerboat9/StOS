@@ -1,10 +1,11 @@
 <!DOCTYPE html>
 <html>
 <head>
-<script>
 
+<script>
 (function() {
-    let loadStr = function(mem, i) {
+    if (typeof stos !== "object") stos = {};
+    stos.loadStr = function(mem, i) {
         let s = "";
         let a = new Uint32Array(mem.buffer);
         while (true) {
@@ -12,38 +13,98 @@
             s += String.fromCharCode(a[i++]);
         }
         return s;
-    }
+    };
+    let cacheModuleData = {};
+    let cacheImports = {};
+    stos.fetchSafe = function(p1, p2) {
+        return fetch(p1, p2).then(function(r) {
+            if (!r.ok) throw new Error("Could not load URL");
+            return r;
+        });
+    };
+    stos.loadWasmModule = function(name) {
+        if (cacheModuleData[name] !== null) return cacheModuleData[name];
+        return stos.fetchSafe(name).then(r => r.arrayBuffer()).then(b => WebAssembly.compile(b, i)).then(function(b) {
+            cacheModuleData[name] = b;
+            return b;
+        });
+    };
+    stos.loadWasmRaw = function(name, i) {
+        return stos.loadWasmModule(name).then(v => WebAssembly.instantiate(v, i));
+    };
+    stos.loadWasm = function(name) {
+        return stos.getImports(name).then(function(imp) {
+            let p = Promise.resolve(null);
+            let importTable = {};
+            for (let i = 0; i < imp.length; ++i) {
+                p = p.then(function() {
+                    stos.loadLib(imp[i].module).then(function(v) {
+                        importTable[imp[i].module] = v.exports;
+                    });
+                });
+            }
+            p = p.then(() => importTable);
+            return p;
+        }).then(i => stos.loadWasmRaw(name, i));
+    };
+    stos.getImports = function(name) {
+        if (cacheImports[name] !== null) return cacheImports[name];
+        return stos.loadWasmModule(name).then(m => WebAssembly.Module.imports(m)).then(function(i) {
+            cacheImports[name] = i;
+            return i;
+        });
+    };
+    stos.uncache = function(name) {
+        cacheModuleData[name] = null;
+        cacheImports[name] = null;
+    };
+    let libs = {};
+    stos.unloadLib = function(name) {
+        libs[name] = null;
+    };
+    stos.loadLib = function(name) {
+        if (libs[name] !== null) stos.unloadLib(name);
+        stos.loadWasm(name).then(function(v) {
+            libs[name] = v;
+            return v;
+        });
+    };
+})();
+</script>
 
-    let kernMemory = WebAssembly.Memory({initial: 1, maximum: 1});
+<script>
+
+(function() {
+    let kernMemory = new WebAssembly.Memory({initial: 1, maximum: 1});
+    let encoder = new TextEncoder("ascii");
+    let addTaskBytes = function(b, mem) {
+        if ((typeof s !== "object") || (s.constructor !== "ArrayBuffer") || (typeof mem !== "object") || (mem.constructor !== Memory))) {
+            return -1;
+        }
+        let pid = 0;
+        while (tasks[pid] !== null) ++pid;
+        tasks[pid] = {
+            "state": 0,
+            "imports": {}
+        }
+        let m = WebAssembly.compile(b);
+        
+        
     let current = 0;
+    let todo = {};
     let tasks = [
         {
-            imports = {
+            "state": 1,
+            "imports": {
                 "mem": kernMemory,
                 "addTask": function(i)
                     i = Math.floor(i);
                     s = loadStr(i, tasks[current].imports.mem);
-                    let pid = 0;
-                    while (tasks[pid] !=== null) pid++;
-                    XMLHttpRequest req = new XHTTPRequest();
-                    req.onreadystatechange = function() {
-                        if (req.state == 4) {
-                            if (req.status == 200) {
-                                //TODO
-                            } else { 
-                                //TODO
-                            }
-                        }
-                    }
-                    req.open("GET", s, true);
-                    req.send();
-                    return pid;
+                    todo[todo.length] = s;
                 }
             }
         }
     ];
-    let startTask = function(isAdmin, name, size) {
-        
 
 </script>
 </head>
