@@ -22,9 +22,10 @@
             return r;
         });
     };
-    stos.loadWasmModule = function(name) {
+    stos.loadWasmModule = function(nameFull) {
+        let name = nameFull.substring(nameFull.search("[^/\\]+/*"));
         if (cacheModuleData[name] !== null) return cacheModuleData[name];
-        return stos.fetchSafe(name).then(r => r.arrayBuffer()).then(b => WebAssembly.compile(b, i)).then(function(b) {
+        return stos.fetchSafe(nameFull).then(r => r.arrayBuffer()).then(b => WebAssembly.compile(b, i)).then(function(b) {
             cacheModuleData[name] = b;
             return b;
         });
@@ -32,10 +33,10 @@
     stos.loadWasmRaw = function(name, i) {
         return stos.loadWasmModule(name).then(v => WebAssembly.instantiate(v, i));
     };
-    stos.loadWasm = function(name) {
+    stos.loadWasm = function(name, args) {
         return stos.getImports(name).then(function(imp) {
             let p = Promise.resolve(null);
-            let importTable = {};
+            let importTable = {"mem": new WebAssembly.Memory({"initial": 1})};
             for (let i = 0; i < imp.length; ++i) {
                 p = p.then(function() {
                     stos.loadLib(imp[i].module).then(function(v) {
@@ -64,47 +65,32 @@
     };
     stos.loadLib = function(name) {
         if (libs[name] !== null) stos.unloadLib(name);
-        stos.loadWasm(name).then(function(v) {
+        return stos.loadWasm(name).then(function(v) {
             libs[name] = v;
             return v;
         });
     };
+    let tasks = {};
+    stos.addTask = function(name) {
+        return stos.loadWasm(name).then(function(v) {
+            let pid = 0;
+            while (tasks[pid] !== null) ++pid;
+            tasks[pid] = v;
+            return pid;
+        });
+    };
+    let core = new Worker("core.js");
+    stos.tick = function() {
+        core.
 })();
 </script>
 
 <script>
 
 (function() {
-    let kernMemory = new WebAssembly.Memory({initial: 1, maximum: 1});
-    let encoder = new TextEncoder("ascii");
-    let addTaskBytes = function(b, mem) {
-        if ((typeof s !== "object") || (s.constructor !== "ArrayBuffer") || (typeof mem !== "object") || (mem.constructor !== Memory))) {
-            return -1;
-        }
-        let pid = 0;
-        while (tasks[pid] !== null) ++pid;
-        tasks[pid] = {
-            "state": 0,
-            "imports": {}
-        }
-        let m = WebAssembly.compile(b);
-        
-        
     let current = 0;
     let todo = {};
-    let tasks = [
-        {
-            "state": 1,
-            "imports": {
-                "mem": kernMemory,
-                "addTask": function(i)
-                    i = Math.floor(i);
-                    s = loadStr(i, tasks[current].imports.mem);
-                    todo[todo.length] = s;
-                }
-            }
-        }
-    ];
+    let tasks = [];
 
 </script>
 </head>
